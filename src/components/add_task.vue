@@ -82,6 +82,7 @@ function cancel() {
   router.back()
 }
 </script>
+
 <template>
   <div class="add-task-container">
     <h1>Добавить новую</h1>
