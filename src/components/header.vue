@@ -10,7 +10,6 @@ window.addEventListener('scroll', () => {
 })
 
 isScrolled.value = window.scrollY > 50
-
 </script>
 
 <template>
@@ -41,11 +40,6 @@ isScrolled.value = window.scrollY > 50
 </template>
 
 <style scoped>
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%; 
-}
 .container{
     background-color: #7E884C;
     display: flex;
@@ -54,6 +48,7 @@ html, body {
     padding: 30px;
     align-items: center;
     margin: 0;
+    gap: 30px;
 }
 
 .header-img{
@@ -64,13 +59,16 @@ html, body {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    flex-wrap: wrap;
     width: 40%;
+    gap: 10px;
 }
 
 .nav-item{
     font-family: sans-serif;
     color: #ECEFC2;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 </style>
