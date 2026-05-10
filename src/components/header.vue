@@ -66,7 +66,7 @@ isScrolled.value = window.scrollY > 50
 
 .nav-item{
     font-family: sans-serif;
-    color: #ECEFC2;
+    color: #FEFAE0;
     text-decoration: none;
     white-space: nowrap;
 }
