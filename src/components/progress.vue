@@ -1,19 +1,21 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useHabits } from '../composables/useHabits'
 
 const { habits, loadData } = useHabits()
 
-const addictions = computed(() => {
-    return habits.value.filter(item => item.type === 'addiction')
+const activeTab = ref('addictions') //вкладка прогресса зависимости/привычки. по умолчанию зависимости
+
+const filteredItems = computed(() => {
+    return habits.value.filter(item => item.type === activeTab.value.slice(0, -1))
 })
 
-function getProgress(addiction) {
-    const completedDays = Object.values(addiction.completed || {})
+function getProgress(item) {
+    const completedDays = Object.values(item.completed || {})
         .filter(Boolean).length
 
-    const start = new Date(addiction.startDate)
-    const end = new Date(addiction.endDate)
+    const start = new Date(item.startDate)
+    const end = new Date(item.endDate)
 
     const totalDays = Math.ceil(
         (end - start) / (1000 * 60 * 60 * 24)
@@ -23,21 +25,17 @@ function getProgress(addiction) {
         ? Math.round((completedDays / totalDays) * 100)
         : 0
 
-    return {
-        completedDays,
-        totalDays,
-        percent
-    }
+    return { completedDays, totalDays, percent }
 }
 
 const overallProgress = computed(() => {
-    if (addictions.value.length === 0) return 0
+    if (filteredItems.value.length === 0) return 0
 
-    const total = addictions.value.reduce((sum, addiction) => {
-        return sum + getProgress(addiction).percent
+    const total = filteredItems.value.reduce((sum, item) => {
+        return sum + getProgress(item).percent
     }, 0)
 
-    return Math.round(total / addictions.value.length)
+    return Math.round(total / filteredItems.value.length)
 })
 
 onMounted(() => {
@@ -48,6 +46,17 @@ onMounted(() => {
 <template>
     <div class="page">
         <h1>Прогресс</h1>
+
+        <!-- Табы -->
+        <div class="tabs">
+            <button :class="{ active: activeTab === 'addictions' }" @click="activeTab = 'addictions'">
+                Зависимости
+            </button>
+
+            <button :class="{ active: activeTab === 'habits' }" @click="activeTab = 'habits'">
+                Привычки
+            </button>
+        </div>
 
         <div class="main-progress">
             <div class="circle">
@@ -67,29 +76,31 @@ onMounted(() => {
             </div>
 
             <p class="overall-text">
-                Общий прогресс отказа от зависимостей
+                Общий прогресс {{ activeTab === 'addictions'
+                    ? 'отказа от зависимостей'
+                    : 'развития привычек' }}
             </p>
         </div>
 
         <div class="progress-list">
-            <div v-for="addiction in addictions" :key="addiction.id" class="progress-card">
+            <div v-for="item in filteredItems" :key="item.id" class="progress-card">
                 <div class="top">
-                    <h2>{{ addiction.name }}</h2>
+                    <h2>{{ item.name }}</h2>
 
                     <span class="percent">
-                        {{ getProgress(addiction).percent }}%
+                        {{ getProgress(item).percent }}%
                     </span>
                 </div>
 
                 <div class="bar">
-                    <div class="fill" :style="{ width: getProgress(addiction).percent + '%' }"></div>
+                    <div class="fill" :style="{ width: getProgress(item).percent + '%' }"></div>
                 </div>
 
                 <p class="stats">
                     Успешных дней:
-                    {{ getProgress(addiction).completedDays }}
+                    {{ getProgress(item).completedDays }}
                     из
-                    {{ getProgress(addiction).totalDays }}
+                    {{ getProgress(item).totalDays }}
                 </p>
             </div>
         </div>
@@ -106,14 +117,35 @@ onMounted(() => {
 
 h1 {
     color: #2B331B;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.tabs button {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #7E884C;
+    background: white;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+.tabs button.active {
+    background: #7E884C;
+    color: white;
 }
 
 .main-progress {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 50px;
+    margin-bottom: 40px;
 }
 
 .circle {
@@ -137,7 +169,7 @@ svg {
     stroke: #7E884C;
     stroke-width: 4;
     stroke-linecap: round;
-    transition: stroke-dasharray 0.5s ease;
+    transition: 0.4s;
 }
 
 .percentage {
@@ -148,21 +180,21 @@ svg {
 }
 
 .overall-text {
-    margin-top: 20px;
-    font-size: 18px;
+    margin-top: 15px;
+    font-size: 16px;
     color: #444;
 }
 
 .progress-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
 }
 
 .progress-card {
     background: #FEFAE0;
-    border-radius: 18px;
-    padding: 20px;
+    border-radius: 16px;
+    padding: 18px;
     border: 2px solid #7E884C;
 }
 
@@ -170,7 +202,6 @@ svg {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
 }
 
 h2 {
@@ -179,17 +210,16 @@ h2 {
 }
 
 .percent {
-    font-size: 20px;
     font-weight: bold;
     color: #7E884C;
 }
 
 .bar {
-    width: 100%;
-    height: 16px;
+    height: 14px;
     background: #ddd;
     border-radius: 20px;
     overflow: hidden;
+    margin-top: 10px;
 }
 
 .fill {
@@ -199,7 +229,8 @@ h2 {
 }
 
 .stats {
-    margin-top: 12px;
+    margin-top: 10px;
+    font-size: 14px;
     color: #555;
 }
 </style>
