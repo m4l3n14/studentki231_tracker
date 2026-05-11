@@ -6,10 +6,10 @@ const router = useRouter()
 const isScrolled = ref(false)
 
 window.addEventListener('scroll', () => {
-    isScrolled.value = window.scrollY > 20
+    isScrolled.value = window.scrollY > 10
 })
 
-isScrolled.value = window.scrollY > 20
+isScrolled.value = window.scrollY > 10
 </script>
 
 <template>
