@@ -23,6 +23,8 @@ const visibleDays = ref([])
 const selectedDateStr = ref('')
 const currentCenter = ref(new Date())
 
+const selectedDate = ref(new Date())
+
 function updateDays() {
   visibleDays.value = getCarouselDays(currentCenter.value, props.range)
   selectedDateStr.value = props.modelValue ? 
@@ -80,9 +82,11 @@ function scrollNext() {
 }
 
 function selectDay(date) {
+  selectedDate.value = new Date(date)
+  selectedDateStr.value = date.toISOString().split('T')[0]
+  
   emit('update:modelValue', date)
   emit('daySelect', date)
-  selectedDateStr.value = date.toISOString().split('T')[0]
 }
 
 watch(() => props.modelValue, (newDate) => {
@@ -94,22 +98,51 @@ watch(() => props.modelValue, (newDate) => {
   }
 })
 
-const todayStr = computed(() => {
-  const today = new Date()
-  return today.toISOString().split('T')[0]
+const activeDateStr = computed(() => {
+  return selectedDate.value.toISOString().split('T')[0]
 })
 
-const todayTasks = computed(() => {
+const todayStr = computed(() => {
+  return new Date().toISOString().split('T')[0]
+})
+
+const canToggle = computed(() => {
+  return activeDateStr.value <= todayStr.value
+})
+
+const tasksTitle = computed(() => {
+  const selected = selectedDate.value
   const today = new Date()
+  if (selected.toDateString() === today.toDateString()) {
+    return 'Задачи на сегодня:'
+  }
+  
+  const options = { day: 'numeric', month: 'long' }
+  const formattedDate = selected.toLocaleDateString('ru-RU', options)
+  
+  if (selected > today) {
+    return `Задачи на ${formattedDate}:`
+  }
+  
+  return `Задачи на ${formattedDate}:`
+})
+
+const activeTasks = computed(() => {
+  const checkDate = new Date(selectedDate.value)
+  checkDate.setHours(0, 0, 0, 0)
   
   return habits.value
     .filter(item => {
       const startDate = new Date(item.startDate)
+      startDate.setHours(0, 0, 0, 0)
+      
       const endDate = new Date(item.endDate)
-      return today >= startDate && today <= endDate
+      endDate.setHours(23, 59, 59, 999)
+      
+      return checkDate >= startDate && checkDate <= endDate
     })
     .map(item => {
-      const dateStr = todayStr.value
+      const dateStr = activeDateStr.value
       return {
         ...item,
         taskType: item.type,
@@ -119,19 +152,28 @@ const todayTasks = computed(() => {
 })
 
 const progressPercent = computed(() => {
-  if (todayTasks.value.length === 0) return 0
-  const completedCount = todayTasks.value.filter(task => task.completed).length
-  return Math.round((completedCount / todayTasks.value.length) * 100)
+  if (activeTasks.value.length === 0) return 0
+  const completedCount = activeTasks.value.filter(task => task.completed).length
+  return Math.round((completedCount / activeTasks.value.length) * 100)
 })
 
 function toggleTask(task) {
-  const today = new Date()
-  toggleHabit(task.id, today)
+  if (!canToggle.value) return
+  
+  toggleHabit(task.id, selectedDate.value)
 }
 
 function goToAddTask() {
   router.push({ name: 'AddTask' })
 }
+
+const isFutureDate = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const selected = new Date(selectedDate.value)
+  selected.setHours(0, 0, 0, 0)
+  return selected > today
+})
 
 onMounted(() => {
   loadData()
@@ -168,40 +210,56 @@ onMounted(() => {
         </div>
     </div>
 
-<div class="tasks-header">
-  <h2 class="tasks-subtitle">Задачи на сегодня:</h2>
-</div>
+    <div class="tasks-header">
+      <h2 class="tasks-subtitle">{{ tasksTitle }}</h2>
+    </div>
 
-<div class="progress-container">
-  <div class="progress-circle">
-    <svg viewBox="0 0 36 36" class="circular-chart">
-      <path class="circle-bg"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-      <path class="circle"
-        :stroke-dasharray="`${progressPercent}, 100`"
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
-      />
-      <text x="18" y="20.35" class="percentage">{{ progressPercent }}%</text>
-    </svg>
-  </div>
-</div>
+    <div class="progress-container">
+      <div class="progress-circle">
+        <svg viewBox="0 0 36 36" class="circular-chart">
+          <path class="circle-bg"
+            d="M18 2.0845
+              a 15.9155 15.9155 0 0 1 0 31.831
+              a 15.9155 15.9155 0 0 1 0 -31.831"
+          />
+          <path class="circle"
+            :stroke-dasharray="`${progressPercent}, 100`"
+            d="M18 2.0845
+              a 15.9155 15.9155 0 0 1 0 31.831
+              a 15.9155 15.9155 0 0 1 0 -31.831"
+          />
+          <text x="18" y="20.35" class="percentage">{{ progressPercent }}%</text>
+        </svg>
+      </div>
+    </div>
+
+    <div v-if="isFutureDate && activeTasks.length > 0" class="future-notice">
+      Это будущая дата. Отметьте свои выполнения в этот день
+    </div>
 
     <div class="tasks-list">
-      <div v-if="todayTasks.length === 0" class="empty-state">
-        <p>У вас пока нет задач на сегодня.</p>
+      <div v-if="activeTasks.length === 0" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p class="empty-text">На эту дату нет активных задач</p>
+        <p class="empty-hint">
+          <template v-if="isFutureDate">
+            Задачи появятся здесь, когда наступит эта дата
+          </template>
+          <template v-else>
+            Добавьте новую привычку или зависимость
+          </template>
+        </p>
         <button @click="goToAddTask" class="add-button">+</button>
       </div>
       
       <div 
-        v-for="task in todayTasks" 
+        v-for="task in activeTasks" 
         :key="task.id" 
         class="task-item"
-        :class="{ 'completed': task.completed }"
+        :class="{ 
+          'completed': task.completed,
+          'future': isFutureDate
+        }"
         @click="toggleTask(task)"
       >
         <div class="task-left">
@@ -212,8 +270,6 @@ onMounted(() => {
         </div>
         <span class="task-checkmark">{{ task.completed ? '✓' : '' }}</span>
       </div>
-      
-      <button v-if="todayTasks.length > 0" @click="goToAddTask" class="add-button secondary">+</button>
     </div>
   </div>
 </template>
@@ -226,6 +282,7 @@ onMounted(() => {
   font-family: sans-serif;
 }
 
+/* Заголовок */
 .tasks-header {
   margin: 30px 0 10px;
 }
@@ -235,6 +292,7 @@ onMounted(() => {
   color: #2B331B;
   margin: 0;
 }
+
 .progress-container {
   display: flex;
   justify-content: center;
@@ -256,22 +314,33 @@ onMounted(() => {
 .circle-bg {
   fill: none;
   stroke: #eee;
-  stroke-width: 3.5;
+  stroke-width: 3;
 }
 
 .circle {
   fill: none;
   stroke-width: 4;
-  stroke: #2d4c1e;
+  stroke: #7E884C;
   stroke-linecap: round;
   transition: stroke-dasharray 0.5s ease;
 }
 
 .percentage {
-  fill: #2d4c1e;
-  font-size: 0.65em;
+  fill: #2B331B;
+  font-size: 0.45em;
   text-anchor: middle;
   font-weight: bold;
+}
+
+.future-notice {
+  text-align: center;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  background: #b4c176;
+  border: 1px solid #7E884C;
+  border-radius: 10px;
+  color: #52573a;
+  font-size: 14px;
 }
 
 .tasks-list {
@@ -285,23 +354,32 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  background: #FEFAE0;;
-  border: 1px solid #2d4c1e;
+  background: white;
+  border: 1px solid #ddd;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s;
   font-size: 18px;
-  color: #2B331B;
+  color: #52573a;
 }
 
 .task-item:hover {
-  background: #fff9c9;
+  background: #f9f9f9;
+}
+
+.task-item.future {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.task-item.future:hover {
+  background: white;
 }
 
 .task-item.completed {
-  background: #7E884C;
-  border-color: #7E884C;
-  color: #FEFAE0;
+  background: #2d4c1e;
+  border-color: #2d4c1e;
+  color: white;
 }
 
 .task-left {
@@ -349,8 +427,25 @@ onMounted(() => {
 
 .empty-state {
   text-align: center;
-  padding: 40px 0;
+  padding: 40px 20px;
   color: #666;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.empty-text {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: #444;
+}
+
+.empty-hint {
+  font-size: 14px;
+  color: #999;
+  margin: 0 0 20px;
 }
 
 .add-button {
@@ -358,7 +453,7 @@ onMounted(() => {
   height: 50px;
   border-radius: 50%;
   background: #7E884C;
-  color: #FEFAE0;
+  color: white;
   font-size: 28px;
   border: none;
   cursor: pointer;
@@ -368,23 +463,6 @@ onMounted(() => {
   margin: 20px auto 0;
   transition: all 0.3s;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.add-button:hover {
-  background: #6a7440;
-  transform: scale(1.05);
-}
-
-.add-button.secondary {
-  background: white;
-  color: #7E884C;
-  border: 2px solid #7E884C;
-  font-size: 32px;
-  line-height: 1;
-}
-
-.add-button.secondary:hover {
-  background: #f0f4e1;
 }
 
 .carousel{
@@ -452,7 +530,7 @@ onMounted(() => {
   border-radius: 100%;
   color: #2B331B;
   border: solid 1px #2B331B;
-  background-color: #FEFAE0;
+  background-color: #ECEFC2;
 }
 
 .month {
@@ -473,7 +551,7 @@ onMounted(() => {
 }
 
 .carousel-btn:hover {
-  background: white;
+  background: #f0f0f0;
   transform: scale(1.01);
 }
 </style>
