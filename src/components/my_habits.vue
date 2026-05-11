@@ -14,6 +14,7 @@ const editForm = ref({
 })
 
 const deleteConfirmId = ref(null)
+const editError = ref('')
 
 const todayStr = computed(() => {
     return new Date().toISOString().split('T')[0]
@@ -43,6 +44,7 @@ function startEdit(habit) {
     startDate: habit.startDate,
     endDate: habit.endDate
   }
+  editError.value = ''
 }
 
 function cancelEdit() {
@@ -52,19 +54,22 @@ function cancelEdit() {
     startDate: '',
     endDate: ''
   }
+  editError.value = ''
 }
 
 function saveEdit(habitId) {
-  if (!editForm.value.name.trim()) return
-  
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  editError.value = ''
+
+  if (!editForm.value.name.trim()) {
+    editError.value = 'Введите название привычки'
+    return
+  }
   
   const startDate = new Date(editForm.value.startDate)
   const endDate = new Date(editForm.value.endDate)
   
   if (endDate < startDate) {
-    alert('Дата окончания не может быть раньше даты начала')
+    editError.value = 'Дата окончания не может быть раньше даты начала'
     return
   }
   
@@ -204,7 +209,6 @@ onMounted(() => {
             <button @click="startEdit(habit)" class="action-btn edit-btn" title="Редактировать">
               ✎
             </button>
-            
             <button 
               v-if="deleteConfirmId !== habit.id" 
               @click="confirmDelete(habit.id)" 
@@ -253,7 +257,7 @@ onMounted(() => {
               >
             </div>
           </div>
-          
+          <span v-if="editError" class="edit-error"> {{ editError }} </span>
           <div class="edit-actions">
             <button @click="saveEdit(habit.id)" class="save-edit-btn">Сохранить</button>
             <button @click="cancelEdit" class="cancel-edit-btn">Отмена</button>
@@ -618,5 +622,11 @@ onMounted(() => {
 .habit-card.completed {
     border-color: #7E884C;
     box-shadow: 0 4px 15px rgba(126, 136, 76, 0.12);
+}
+.edit-error {
+    font-size: 14px;
+    color: #c62828;
+    font-weight: 500;
+    margin-top: -4px;
 }
 </style>

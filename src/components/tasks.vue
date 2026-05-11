@@ -278,7 +278,6 @@ onMounted(() => {
   font-family: sans-serif;
 }
 
-/* Заголовок */
 .tasks-header {
   margin: 30px 0 10px;
 }
