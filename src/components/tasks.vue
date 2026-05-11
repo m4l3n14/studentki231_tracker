@@ -1,21 +1,15 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useDate } from '../composables/useDate'
 import { useHabits } from '../composables/useHabits'
+import { useSelectedDate } from '../composables/useSelectedDate'
 
 const router = useRouter()
+const route = useRoute()
 const { habits, loadData, toggleHabit } = useHabits()
-
-const props = defineProps({
-  modelValue: { type: Date, default: () => new Date() },
-  range: { type: Number, default: 3 },
-  showMonth: { type: Boolean, default: false }
-})
-
-const emit = defineEmits(['update:modelValue', 'daySelect'])
-
 const { getCarouselDays, formatDate } = useDate()
+const { selectedDate, setSelectedDate } = useSelectedDate()  
 
 const trackRef = ref(null)
 const dayRefs = ref([])
@@ -23,12 +17,14 @@ const visibleDays = ref([])
 const selectedDateStr = ref('')
 const currentCenter = ref(new Date())
 
-const selectedDate = ref(new Date())
+const props = defineProps({
+  range: { type: Number, default: 3 },
+  showMonth: { type: Boolean, default: false }
+})
 
 function updateDays() {
   visibleDays.value = getCarouselDays(currentCenter.value, props.range)
-  selectedDateStr.value = props.modelValue ? 
-    new Date(props.modelValue).toISOString().split('T')[0] : ''
+  selectedDateStr.value = selectedDate.value.toISOString().split('T')[0]
 }
 
 function setDayRef(el, index) {
@@ -82,21 +78,18 @@ function scrollNext() {
 }
 
 function selectDay(date) {
-  selectedDate.value = new Date(date)
+  setSelectedDate(date) 
   selectedDateStr.value = date.toISOString().split('T')[0]
-  
-  emit('update:modelValue', date)
-  emit('daySelect', date)
 }
 
-watch(() => props.modelValue, (newDate) => {
+watch(selectedDate, (newDate) => {
   if (newDate) {
-    selectedDateStr.value = new Date(newDate).toISOString().split('T')[0]
+    selectedDateStr.value = newDate.toISOString().split('T')[0]
     currentCenter.value = new Date(newDate)
     updateDays()
     scrollToCenter()
   }
-})
+}, { immediate: true })
 
 const activeDateStr = computed(() => {
   return selectedDate.value.toISOString().split('T')[0]
@@ -119,10 +112,6 @@ const tasksTitle = computed(() => {
   
   const options = { day: 'numeric', month: 'long' }
   const formattedDate = selected.toLocaleDateString('ru-RU', options)
-  
-  if (selected > today) {
-    return `Задачи на ${formattedDate}:`
-  }
   
   return `Задачи на ${formattedDate}:`
 })
@@ -159,7 +148,6 @@ const progressPercent = computed(() => {
 
 function toggleTask(task) {
   if (!canToggle.value) return
-  
   toggleHabit(task.id, selectedDate.value)
 }
 
@@ -179,6 +167,14 @@ onMounted(() => {
   loadData()
   updateDays()
   scrollToCenter()
+  
+  if (route.query.date) {
+    const dateFromCalendar = new Date(route.query.date)
+    setSelectedDate(dateFromCalendar)
+    currentCenter.value = dateFromCalendar
+    updateDays()
+    scrollToCenter()
+  }
 })
 </script>
 
