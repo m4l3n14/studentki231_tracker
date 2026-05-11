@@ -6,10 +6,10 @@ const router = useRouter()
 const isScrolled = ref(false)
 
 window.addEventListener('scroll', () => {
-    isScrolled.value = window.scrollY > 50
+    isScrolled.value = window.scrollY > 20
 })
 
-isScrolled.value = window.scrollY > 50
+isScrolled.value = window.scrollY > 20
 </script>
 
 <template>
@@ -27,48 +27,67 @@ isScrolled.value = window.scrollY > 50
           <router-link :to="{name: 'Myaddictions'}" class="nav-item">Мои зависимости</router-link>
           <router-link :to="{name: 'Progress'}" class="nav-item">Прогресс</router-link>
         </nav>
-        
-        <div class="header-actions">
-            <div class="NewTask">
-                <router-link :to="{name: 'AddTask'}" class="header-link">
-                    <img src="/src/assets/img/plus.svg" alt="plus" class="header-img">
-                </router-link>
-            </div>
-        </div>
-      </div>
+    </div>
   </header>
 </template>
 
 <style scoped>
-.container{
-    background-color: #7E884C;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 30px;
-    align-items: center;
-    margin: 0;
-    gap: 30px;
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s ease;
 }
 
-.header-img{
-    width: 30px;
+.container {
+  background-color: #7E884C;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 30px;
+  align-items: center;
+  margin: 0;
+  gap: 30px;
+  transition: all 0.3s ease;
 }
 
-.nav{
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    width: 40%;
-    gap: 10px;
+.header.scrolled .container {
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 15px 30px;
 }
 
-.nav-item{
-    font-family: sans-serif;
-    color: #FEFAE0;
-    text-decoration: none;
-    white-space: nowrap;
+.header.scrolled .nav-item {
+  color: #2B331B;
 }
 
+.header.scrolled .header-img {
+  filter: brightness(0);
+}
+
+.header-img {
+  width: 30px;
+  transition: all 0.3s ease;
+}
+
+.nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 40%;
+  gap: 10px;
+}
+
+.nav-item {
+  font-family: sans-serif;
+  color: #FEFAE0;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.nav-item:hover {
+  opacity: 0.8;
+}
 </style>

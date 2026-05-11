@@ -1,11 +1,17 @@
 <script setup>
 import Header from './components/header.vue'
+import Footer from './components/footer.vue'
+import FloatButton from './components/float_button.vue'
 </script>
 
 <template>
-  <div class="app">
+  <div id="app">
     <Header />
-    <router-view />
+    <main class="main-content">
+      <router-view />
+    </main>
+    <Footer />
+    <FloatButton />
   </div>
 </template>
 
@@ -17,12 +23,20 @@ import Header from './components/header.vue'
 }
 
 html, body {
-  margin: 0;
-  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: sans-serif;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-.app {
-  min-height: 100vh;
+.main-content {
+  flex: 1;
 }
 </style>
