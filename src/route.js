@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import Tasks from './components/tasks.vue'
 import Calendar from './components/calendar.vue'
 import Myaddictions from './components/my_addictions.vue'
@@ -16,6 +16,6 @@ const routes = [
 ]
 
 export const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHashHistory(),
     routes
 })

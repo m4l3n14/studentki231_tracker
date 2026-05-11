@@ -549,4 +549,56 @@ onMounted(() => {
   background: #f0f0f0;
   transform: scale(1.01);
 }
+
+@media (max-width: 600px) {
+  .carousel-container {
+    gap: 4px;
+  }
+  
+  .carousel-day {
+    width: 55px;
+    padding: 5px 3px;
+  }
+  
+  .weekday {
+    font-size: 11px;
+  }
+  
+  .day-number {
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin: 0 auto;
+  }
+  
+  .carousel-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-track {
+    flex-direction: column;
+    align-items: center;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .carousel-day {
+    width: 80px;
+  }
+  
+  .carousel-btn {
+    display: none;
+  }
+}
 </style>
